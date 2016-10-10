@@ -64,11 +64,18 @@ if [ -f "$rootdir/.vimrc" ]; then
     echo
     echo "Moving existing ~/.vimrc to ~/.vimrc-bak"
     if [ -f "$rootdir/.vimrc-bak" ]; then
-        all_done "ERROR: ~/.vimrc-bak already exists! Exiting..." 1
+        if [ $force_delete -eq 0 ]; then
+            all_done "ERROR: ~/.vimrc-bak already exists! Exiting..." 1
+        fi
+        rm $rootdir/.vimrc-bak
     fi
     mv $rootdir/.vimrc $rootdir/.vimrc-bak
 fi
 
+# Remove the existing vimrc if this is a force delete operation
+if [ $force_delete -eq 1 -a -f "$curdir/vimrc" ]; then
+    rm "$curdir/vimrc"
+fi
 
 echo
 echo "Setting up .vimrc..."
