@@ -1,0 +1,94 @@
+#!/bin/bash
+
+function usage()
+{
+    echo "USAGE: ./$0 [options]"
+    echo "This script is used to set up Vundle quickly and easily"
+    echo
+    echo "  -f  =   force delete of any existing ~/.vim folder"
+    exit 0
+}
+
+# Configurable variables
+dotvim=".vim"
+force_delete=0
+
+while getopts "f?" option; do
+    case $option in
+        f) force_delete=1 ;;
+        *) usage ;;
+    esac
+done
+shift $((OPTIND-1))
+
+
+# All of the setup happens from the root folder
+curdir=$(pwd)
+cd ~
+rootdir=$(pwd)
+
+# $1 = message, $2 = returnv value
+function all_done()
+{
+    # Restore to the original folder
+    cd $curdir
+    echo
+    echo $1
+    exit $2
+}
+
+# Check if we would overwrite an existing configuration and bail if so.
+if [ -d "$rootdir/$dotvim" ]; then
+    if [ $force_delete -eq 0 ]; then
+        all_done "ERROR: $rootdir/$dotvim already exists! Exiting..." 1
+    fi
+    echo 
+    echo "Removing folder:"
+    echo "  ~/$dotvim"
+    rm -rf "$rootdir/$dotvim"
+fi
+
+echo
+echo "Creating folder:"
+echo "  ~/$dotvim/bundle"
+mkdir -p "$rootdir/$dotvim/bundle/"
+
+echo
+echo "Cloning vundle to:"
+echo "  ~/$dotvim/bundle/Vundle.vim"
+git clone https://github.com/VundleVim/Vundle.vim.git $rootdir/$dotvim/bundle/Vundle.vim
+
+
+# Make a backup in case this doesn't go as expected.
+if [ -f "$rootdir/.vimrc" ]; then
+    echo
+    echo "Moving existing ~/.vimrc to ~/.vimrc-bak"
+    if [ -f "$rootdir/.vimrc-bak" ]; then
+        all_done "ERROR: ~/.vimrc-bak already exists! Exiting..." 1
+    fi
+    mv $rootdir/.vimrc $rootdir/.vimrc-bak
+fi
+
+
+echo
+echo "Setting up .vimrc..."
+if [ ! -f "$curdir/vimrc" ]; then
+    cp "$curdir/vimrc-template" "$curdir/vimrc"
+fi
+ln -s "$curdir/vimrc" "$rootdir/.vimrc"
+
+
+echo
+echo "Calling vim +PluginInstall..."
+vim +PluginInstall +qall
+
+echo
+echo "Vundle is set up!"
+echo "Modify your settings by editing this file:"
+echo "  $curdir/vimrc"
+echo
+
+
+all_done "All done!" 0
+
+
