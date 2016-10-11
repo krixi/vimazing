@@ -13,7 +13,7 @@ function usage()
 dotvim=".vim"
 force_delete=0
 
-while getopts "f?" option; do
+while getopts "fh?" option; do
     case $option in
         f) force_delete=1 ;;
         *) usage ;;
@@ -37,39 +37,62 @@ function all_done()
     exit $2
 }
 
-# Check if we would overwrite an existing configuration and bail if so.
-if [ -d "$rootdir/$dotvim" ]; then
-    if [ $force_delete -eq 0 ]; then
-        all_done "ERROR: $rootdir/$dotvim already exists! Exiting..." 1
+# Check if we would overwrite an existing configuration
+if [ -d "$rootdir/$dotvim/bundle" ]; then
+    if [ $force_delete -eq 1 ]; then
+        echo 
+        echo "Removing folder:"
+        echo "  ~/$dotvim/bundle"
+        rm -rf "$rootdir/$dotvim/bundle"
     fi
-    echo 
-    echo "Removing folder:"
-    echo "  ~/$dotvim"
-    rm -rf "$rootdir/$dotvim"
 fi
 
-echo
-echo "Creating folder:"
-echo "  ~/$dotvim/bundle"
-mkdir -p "$rootdir/$dotvim/bundle/"
+# Create the folder as needed
+if [ ! -d "$rootdir/$dotvim/bundle" ]; then
+    echo
+    echo "Creating folder:"
+    echo "  ~/$dotvim/bundle"
+    mkdir -p "$rootdir/$dotvim/bundle/"    
+fi
 
-echo
-echo "Cloning vundle to:"
-echo "  ~/$dotvim/bundle/Vundle.vim"
-git clone https://github.com/VundleVim/Vundle.vim.git $rootdir/$dotvim/bundle/Vundle.vim
-
+# Download vundle as needed
+if [ ! -d "$rootdir/$dotvim/bundle/Vundle.vim" ]; then
+    echo
+    echo "Cloning vundle to:"
+    echo "  ~/$dotvim/bundle/Vundle.vim"
+    git clone https://github.com/VundleVim/Vundle.vim.git $rootdir/$dotvim/bundle/Vundle.vim
+else
+    echo
+    echo "Using previously downloaded Vundle."
+fi
 
 # Make a backup in case this doesn't go as expected.
 if [ -f "$rootdir/.vimrc" ]; then
-    echo
-    echo "Moving existing ~/.vimrc to ~/.vimrc-bak"
-    if [ -f "$rootdir/.vimrc-bak" ]; then
-        if [ $force_delete -eq 0 ]; then
-            all_done "ERROR: ~/.vimrc-bak already exists! Exiting..." 1
+
+    # Make a backup if this is a real file. 
+    if [ ! -L "$rootdir/.vimrc" ]; then
+        
+        if [ -L "$rootdir/.vimrc-bak" ]; then
+            rm $rootdir/.vimrc-bak
         fi
-        rm $rootdir/.vimrc-bak
+        
+        if [ -f "$rootdir/.vimrc-bak" ]; then
+            if [ $force_delete -eq 0 ]; then
+                all_done "ERROR: ~/.vimrc-bak already exists! Exiting..." 1
+            fi
+        fi
+        
+        echo
+        echo "Moving existing ~/.vimrc to ~/.vimrc-bak"
+        mv $rootdir/.vimrc $rootdir/.vimrc-bak
+
+    else
+        # just remove it because it's a link
+        echo
+        echo "Removing link:"
+        ls -la $rootdir/.vimrc | awk '{print $9" "$10" "$11}'
+        rm $rootdir/.vimrc
     fi
-    mv $rootdir/.vimrc $rootdir/.vimrc-bak
 fi
 
 
