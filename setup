@@ -9,6 +9,11 @@ function usage()
     exit 0
 }
 
+if [ ! -d $HOME ]; then
+    echo "ERROR: You must set \$HOME"
+    exit 1
+fi
+
 # Configurable variables
 dotvim=".vim"
 force_delete=0
@@ -24,8 +29,7 @@ shift $((OPTIND-1))
 
 # All of the setup happens from the root folder
 curdir=$(pwd)
-cd ~
-rootdir=$(pwd)
+cd $HOME
 
 # $1 = message, $2 = returnv value
 function all_done()
@@ -38,45 +42,45 @@ function all_done()
 }
 
 # Check if we would overwrite an existing configuration
-if [ -d "$rootdir/$dotvim/bundle" ]; then
+if [ -d "$HOME/$dotvim/bundle" ]; then
     if [ $force_delete -eq 1 ]; then
         echo 
         echo "Removing folder:"
         echo "  ~/$dotvim/bundle"
-        rm -rf "$rootdir/$dotvim/bundle"
+        rm -rf "$HOME/$dotvim/bundle"
     fi
 fi
 
 # Create the folder as needed
-if [ ! -d "$rootdir/$dotvim/bundle" ]; then
+if [ ! -d "$HOME/$dotvim/bundle" ]; then
     echo
     echo "Creating folder:"
     echo "  ~/$dotvim/bundle"
-    mkdir -p "$rootdir/$dotvim/bundle/"    
+    mkdir -p "$HOME/$dotvim/bundle/"    
 fi
 
 # Download vundle as needed
-if [ ! -d "$rootdir/$dotvim/bundle/Vundle.vim" ]; then
+if [ ! -d "$HOME/$dotvim/bundle/Vundle.vim" ]; then
     echo
     echo "Cloning vundle to:"
     echo "  ~/$dotvim/bundle/Vundle.vim"
-    git clone https://github.com/VundleVim/Vundle.vim.git $rootdir/$dotvim/bundle/Vundle.vim
+    git clone https://github.com/VundleVim/Vundle.vim.git $HOME/$dotvim/bundle/Vundle.vim
 else
     echo
     echo "Using previously downloaded Vundle."
 fi
 
 # Make a backup in case this doesn't go as expected.
-if [ -f "$rootdir/.vimrc" ]; then
+if [ -f "$HOME/.vimrc" ]; then
 
     # Make a backup if this is a real file. 
-    if [ ! -L "$rootdir/.vimrc" ]; then
+    if [ ! -L "$HOME/.vimrc" ]; then
         
-        if [ -L "$rootdir/.vimrc-bak" ]; then
-            rm $rootdir/.vimrc-bak
+        if [ -L "$HOME/.vimrc-bak" ]; then
+            rm $HOME/.vimrc-bak
         fi
         
-        if [ -f "$rootdir/.vimrc-bak" ]; then
+        if [ -f "$HOME/.vimrc-bak" ]; then
             if [ $force_delete -eq 0 ]; then
                 all_done "ERROR: ~/.vimrc-bak already exists! Exiting..." 1
             fi
@@ -84,24 +88,24 @@ if [ -f "$rootdir/.vimrc" ]; then
         
         echo
         echo "Moving existing ~/.vimrc to ~/.vimrc-bak"
-        mv $rootdir/.vimrc $rootdir/.vimrc-bak
+        mv $HOME/.vimrc $HOME/.vimrc-bak
 
     else
         # just remove it because it's a link
         echo
         echo "Removing link:"
-        ls -la $rootdir/.vimrc | awk '{print $9" "$10" "$11}'
-        rm $rootdir/.vimrc
+        ls -la $HOME/.vimrc | awk '{print $9" "$10" "$11}'
+        rm $HOME/.vimrc
     fi
 fi
 
 
 echo
 echo "Setting up .vimrc..."
-if [ ! -f "$curdir/vimrc" ]; then
-    cp "$curdir/vimrc-template" "$curdir/vimrc"
+if [ ! -f "$HOME/$dotvim/vimrc" ]; then
+    cp "$HOME/$dotvim/vimrc-template" "$HOME/$dotvim/vimrc"
 fi
-ln -s "$curdir/vimrc" "$rootdir/.vimrc"
+ln -s "$HOME/$dotvim/vimrc" "$HOME/.vimrc"
 
 
 echo
@@ -111,7 +115,7 @@ vim +PluginInstall +qall
 echo
 echo "Vundle is set up!"
 echo "Modify your settings by editing this file:"
-echo "  $curdir/vimrc"
+echo "  $HOME/$dotvim/vimrc"
 echo
 
 
